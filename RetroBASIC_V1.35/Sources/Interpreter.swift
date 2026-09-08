@@ -33,17 +33,32 @@ enum Value {
 // MARK: - Arrays
 
 final class BasicArray {
+    private static let maximumElements = 1_000_000
+
     let dims: [Int]          // size of each dimension (maxIndex + 1)
     let isStr: Bool
     var nums: [Double] = []
     var strs: [String] = []
     let autoDimmed: Bool
 
-    init(maxIndexes: [Int], isStr: Bool, autoDimmed: Bool) {
-        self.dims = maxIndexes.map { $0 + 1 }
+    init(maxIndexes: [Int], isStr: Bool, autoDimmed: Bool) throws {
+        var dimensions: [Int] = []
+        dimensions.reserveCapacity(maxIndexes.count)
+        var total = 1
+        for maxIndex in maxIndexes {
+            guard maxIndex >= 0 else { throw BErr("Subscript out of range") }
+            let dimension = maxIndex + 1
+            let product = total.multipliedReportingOverflow(by: dimension)
+            guard !product.overflow, product.partialValue <= Self.maximumElements else {
+                throw BErr("Out of memory")
+            }
+            dimensions.append(dimension)
+            total = product.partialValue
+        }
+
+        self.dims = dimensions
         self.isStr = isStr
         self.autoDimmed = autoDimmed
-        let total = dims.reduce(1, *)
         if isStr { strs = Array(repeating: "", count: total) }
         else { nums = Array(repeating: 0, count: total) }
     }
@@ -376,19 +391,23 @@ final class Interpreter {
         pos += 1
     }
 
-    private func tryLineNumber() -> Int? {
+    private func tryLineNumber() throws -> Int? {
         skipSpaces()
         guard let c = peekCh(), c.isASCIIDigit else { return nil }
         var n = 0
         while pos < chars.count, chars[pos].isASCIIDigit {
-            n = n * 10 + Int(String(chars[pos]))!
+            let digit = Int(String(chars[pos]))!
+            let product = n.multipliedReportingOverflow(by: 10)
+            let sum = product.partialValue.addingReportingOverflow(digit)
+            guard !product.overflow, !sum.overflow else { throw BErr("Overflow") }
+            n = sum.partialValue
             pos += 1
         }
         return n
     }
 
     private func expectLineNumber() throws -> Int {
-        guard let n = tryLineNumber() else { throw BErr("Syntax error") }
+        guard let n = try tryLineNumber() else { throw BErr("Syntax error") }
         return n
     }
 
@@ -443,7 +462,7 @@ final class Interpreter {
         if matchKeyword("DIM") { try stDim(); return }
         if matchKeyword("READ") { try stRead(); return }
         if matchKeyword("DATA") { skipDataStatement(); return }
-        if matchKeyword("RESTORE") { stRestore(); return }
+        if matchKeyword("RESTORE") { try stRestore(); return }
         if matchKeyword("REM") { pos = chars.count; return }
         if matchKeyword("END") { contPos = (lineIdx, pos); throw EndSignal() }
         if matchKeyword("STOP") { contPos = (lineIdx, pos); throw StopSignal() }
@@ -541,8 +560,8 @@ final class Interpreter {
 
     private func arrayFor(_ name: String, subscriptCount: Int) throws -> BasicArray {
         if let a = arrays[name] { return a }
-        let a = BasicArray(maxIndexes: Array(repeating: 10, count: subscriptCount),
-                           isStr: name.hasSuffix("$"), autoDimmed: true)
+        let a = try BasicArray(maxIndexes: Array(repeating: 10, count: subscriptCount),
+                               isStr: name.hasSuffix("$"), autoDimmed: true)
         arrays[name] = a
         return a
     }
@@ -1020,14 +1039,14 @@ final class Interpreter {
 
         if cond != 0 {
             skipSpaces()
-            if let n = tryLineNumber() { try gotoLine(n); return }
+            if let n = try tryLineNumber() { try gotoLine(n); return }
             if thenIsGoto { throw BErr("Syntax error") }
             return  // fall through: statements after THEN execute inline
         }
         // condition false: find matching ELSE on this line, else skip line
         if try scanToElse() {
             skipSpaces()
-            if let n = tryLineNumber() { try gotoLine(n); return }
+            if let n = try tryLineNumber() { try gotoLine(n); return }
         } else {
             pos = chars.count
         }
@@ -1173,7 +1192,8 @@ final class Interpreter {
             if Self.reservedFuncs.contains(name) { throw BErr("Syntax error") }
             let subs = try parseSubscripts()
             if arrays[name] != nil { throw BErr("Duplicate Definition") }
-            arrays[name] = BasicArray(maxIndexes: subs, isStr: name.hasSuffix("$"), autoDimmed: false)
+            arrays[name] = try BasicArray(maxIndexes: subs, isStr: name.hasSuffix("$"),
+                                          autoDimmed: false)
         } while matchKeyword(",")
     }
 
@@ -1271,8 +1291,8 @@ final class Interpreter {
         } while matchKeyword(",")
     }
 
-    private func stRestore() {
-        if let n = tryLineNumber() {
+    private func stRestore() throws {
+        if let n = try tryLineNumber() {
             dataPtr = dataItems.firstIndex { $0.line >= n } ?? dataItems.count
         } else {
             dataPtr = 0
@@ -1725,11 +1745,11 @@ final class Interpreter {
 
     private func stList() throws {
         var from = 0, to = 65529
-        if let n = tryLineNumber() {
+        if let n = try tryLineNumber() {
             from = n; to = n
-            if matchKeyword("-") { to = tryLineNumber() ?? 65529 }
+            if matchKeyword("-") { to = try tryLineNumber() ?? 65529 }
         } else if matchKeyword("-") {
-            to = tryLineNumber() ?? 65529
+            to = try tryLineNumber() ?? 65529
         }
         var nextRowDeadline = ProcessInfo.processInfo.systemUptime
         for (num, text) in program where num >= from && num <= to {
@@ -2031,7 +2051,7 @@ final class Interpreter {
             try loadProgram(named: name)
         }
         var startIdx = 0
-        if let n = tryLineNumber() {
+        if let n = try tryLineNumber() {
             guard let idx = lineIndex[n] else { throw BErr("Undefined line number") }
             startIdx = idx
         }
@@ -2067,6 +2087,21 @@ final class Interpreter {
         return saveDir.appendingPathComponent(name)
     }
 
+    private func parseProgramSourceLine(_ source: Substring) throws -> (num: Int, text: String)? {
+        let line = source.trimmingCharacters(in: .whitespaces)
+        guard let first = line.first, first.isASCIIDigit else { return nil }
+        var index = line.startIndex
+        var number = 0
+        while index < line.endIndex, line[index].isASCIIDigit {
+            let digit = Int(String(line[index]))!
+            guard number <= (65529 - digit) / 10 else { throw BErr("Overflow") }
+            number = number * 10 + digit
+            index = line.index(after: index)
+        }
+        let text = String(line[index...]).trimmingCharacters(in: .whitespaces)
+        return (number, text)
+    }
+
     private func stSave() throws {
         let name = try expression().asStr()
         let url = try fileURL(name)
@@ -2084,17 +2119,11 @@ final class Interpreter {
         guard let src = try? String(contentsOf: url, encoding: .utf8) else {
             throw BErr("File not found")
         }
+        let lines = try src.split(separator: "\n", omittingEmptySubsequences: true)
+            .compactMap { try parseProgramSourceLine($0) }
         stNew()
-        for line in src.split(separator: "\n", omittingEmptySubsequences: true) {
-            let t = line.trimmingCharacters(in: .whitespaces)
-            guard let f = t.first, f.isASCIIDigit else { continue }
-            var p = t.startIndex, n = 0
-            while p < t.endIndex, t[p].isASCIIDigit {
-                n = min(n * 10 + Int(String(t[p]))!, 65529)
-                p = t.index(after: p)
-            }
-            let rest = String(t[p...]).trimmingCharacters(in: .whitespaces)
-            storeLine(n, rest)
+        for line in lines {
+            storeLine(line.num, line.text)
         }
     }
 
@@ -2110,8 +2139,15 @@ final class Interpreter {
         guard let src = try? String(contentsOf: url, encoding: .utf8) else {
             throw BErr("File not found")
         }
+        var lines: [(num: Int, text: String)] = []
         for line in src.split(separator: "\n", omittingEmptySubsequences: true) {
-            _ = processInput(String(line))
+            guard let parsed = try parseProgramSourceLine(line) else {
+                throw BErr("Direct statement in file")
+            }
+            lines.append(parsed)
+        }
+        for line in lines {
+            storeLine(line.num, line.text)
         }
     }
 

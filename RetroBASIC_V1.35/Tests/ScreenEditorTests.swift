@@ -45,6 +45,9 @@ struct ScreenEditorTests {
         preserveExistingLinesDuringAuto()
         rejectInvalidAutoArguments()
         rejectAutoInsideProgram()
+        rejectUnsafeDimensions()
+        rejectOversizedLineNumbers()
+        rejectDirectStatementsDuringMerge()
         formatPrintUsingNumbers()
         formatPrintUsingNumericDecorations()
         formatPrintUsingStringsAndLiterals()
@@ -802,6 +805,60 @@ struct ScreenEditorTests {
         interpreter.handleImmediate("RUN")
         guard core.screenText.contains("Illegal direct in 10") else {
             fatalError("AUTO was accepted inside a program")
+        }
+    }
+
+    static func rejectUnsafeDimensions() {
+        let core = TermCore()
+        let interpreter = Interpreter(console: TerminalConsole(core: core))
+        interpreter.handleImmediate("DIM A(-2)")
+        guard core.screenText.contains("Subscript out of range") else {
+            fatalError("DIM accepted a negative upper bound")
+        }
+
+        interpreter.handleImmediate("DIM B(2147483647,2147483647,2147483647)")
+        guard core.screenText.contains("Out of memory") else {
+            fatalError("DIM accepted an unsafe allocation size")
+        }
+    }
+
+    static func rejectOversizedLineNumbers() {
+        let core = TermCore()
+        let interpreter = Interpreter(console: TerminalConsole(core: core))
+        interpreter.handleImmediate("GOTO " + String(repeating: "9", count: 1_000))
+        guard core.screenText.contains("Overflow") else {
+            fatalError("oversized line number did not produce a BASIC error")
+        }
+    }
+
+    static func rejectDirectStatementsDuringMerge() {
+        let directory = FileManager.default.temporaryDirectory
+            .appendingPathComponent("RetroBASIC-merge-\(UUID().uuidString)")
+        setenv("RETROBASIC_DIR", directory.path, 1)
+        defer {
+            unsetenv("RETROBASIC_DIR")
+            try? FileManager.default.removeItem(at: directory)
+        }
+
+        do {
+            try FileManager.default.createDirectory(at: directory,
+                                                    withIntermediateDirectories: true)
+            try "10 PRINT \"SHOULD NOT MERGE\"\nNEW\n".write(
+                to: directory.appendingPathComponent("UNSAFE.bas"),
+                atomically: true,
+                encoding: .utf8
+            )
+        } catch {
+            fatalError("could not create MERGE fixture: \(error)")
+        }
+
+        let core = TermCore()
+        let interpreter = Interpreter(console: TerminalConsole(core: core))
+        interpreter.processInput("100 PRINT \"KEEP\"")
+        interpreter.handleImmediate("MERGE \"UNSAFE\"")
+        guard core.screenText.contains("Direct statement in file"),
+              interpreter.program.map(\.num) == [100] else {
+            fatalError("MERGE executed or partially applied a direct statement")
         }
     }
 }

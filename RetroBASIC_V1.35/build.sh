@@ -14,8 +14,9 @@ else
     RETROBASIC_SWIFTC="$(xcrun --find swiftc)"
     RETROBASIC_SDK="$(xcrun --sdk macosx --show-sdk-path)"
 fi
-RETROBASIC_MODULE_CACHE=tmp/ModuleCache
-mkdir -p "$APP/Contents/MacOS" "$APP/Contents/Resources" "$RETROBASIC_MODULE_CACHE"
+RETROBASIC_MODULE_CACHE="$(mktemp -d "${TMPDIR:-/tmp}/retrobasic-module-cache.XXXXXX")"
+trap 'rm -rf "$RETROBASIC_MODULE_CACHE"' EXIT
+mkdir -p "$APP/Contents/MacOS" "$APP/Contents/Resources"
 
 echo "== building GUI app =="
 "$RETROBASIC_SWIFTC" -O -swift-version 5 -target "$TARGET" \

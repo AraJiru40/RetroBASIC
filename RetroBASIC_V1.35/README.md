@@ -150,7 +150,7 @@ PAINT (320,100),T$,6
 | GUESS.bas | 数当てゲーム(INPUT/RND/IF) |
 | STARS.bas | LOCATE/COLOR による画面デモ |
 | CATCH.bas | INKEY$ を使ったリアルタイムゲーム(左右矢印キー) |
-| GRAPHICS.bas | WIDTH 80／640×200・8色グラフィックのデモ |
+| GRAPH.bas | WIDTH 80／640×200・8色グラフィックのデモ |
 | TILE_PAINT.bas | X1 Hu-BASIC互換の8色タイルペイント |
 | 3D_MAZE_SAMPLE.bas | WIDTH 40／ランダム生成3D迷路ゲーム |
 | MYSTERY_ROOM.bas | コマンド入力とタイルペイントを使う脱出ゲーム |

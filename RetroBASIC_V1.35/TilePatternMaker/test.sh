@@ -4,6 +4,8 @@ set -euo pipefail
 PROJECT_DIR="$(cd "$(dirname "$0")" && pwd)"
 BUILD_DIR="$PROJECT_DIR/build"
 XCODE_DEVELOPER="/Applications/Xcode.app/Contents/Developer"
+MODULE_CACHE="$(mktemp -d "${TMPDIR:-/tmp}/tile-pattern-maker-test-module-cache.XXXXXX")"
+trap 'rm -rf "$MODULE_CACHE"' EXIT
 
 if [ -x "$XCODE_DEVELOPER/Toolchains/XcodeDefault.xctoolchain/usr/bin/swiftc" ]; then
     SWIFTC="$XCODE_DEVELOPER/Toolchains/XcodeDefault.xctoolchain/usr/bin/swiftc"
@@ -13,14 +15,14 @@ else
     SDK="$(xcrun --sdk macosx --show-sdk-path)"
 fi
 
-mkdir -p "$BUILD_DIR/ModuleCache"
+mkdir -p "$BUILD_DIR"
 
 "$SWIFTC" \
     -Onone \
     -swift-version 5 \
     -target "$(uname -m)-apple-macosx13.0" \
     -sdk "$SDK" \
-    -module-cache-path "$BUILD_DIR/ModuleCache" \
+    -module-cache-path "$MODULE_CACHE" \
     "$PROJECT_DIR/Sources/TilePatternMaker/TilePattern.swift" \
     "$PROJECT_DIR/Tests/TilePatternLogicTests.swift" \
     -o "$BUILD_DIR/TilePatternLogicTests"
@@ -34,7 +36,7 @@ mkdir -p "$BUILD_DIR/ModuleCache"
     -swift-version 5 \
     -target "$(uname -m)-apple-macosx13.0" \
     -sdk "$SDK" \
-    -module-cache-path "$BUILD_DIR/ModuleCache" \
+    -module-cache-path "$MODULE_CACHE" \
     "$PROJECT_DIR/Sources/TilePatternMaker/TilePattern.swift" \
     "$PROJECT_DIR/Sources/TilePatternMaker/main.swift" \
     "$PROJECT_DIR/Tests/AppInteractionTests.swift" \

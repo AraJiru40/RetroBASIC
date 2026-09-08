@@ -295,7 +295,15 @@ private final class MMLChannelParser {
         guard position < source.count, source[position].isASCIIDigit else { return nil }
         var value = 0
         while position < source.count, source[position].isASCIIDigit {
-            value = value * 10 + Int(String(source[position]))!
+            let digit = Int(String(source[position]))!
+            if value <= (256 - digit) / 10 {
+                value = value * 10 + digit
+            } else {
+                // No MML command accepts a value above 255. Saturating keeps
+                // malformed input in the normal syntax-error path without
+                // risking an Int overflow while consuming the remaining digits.
+                value = 256
+            }
             position += 1
         }
         return value

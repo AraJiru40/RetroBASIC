@@ -8,6 +8,8 @@ BUILD_DIR="$PROJECT_DIR/build"
 MACOS_DIR="$APP_DIR/Contents/MacOS"
 RESOURCES_DIR="$APP_DIR/Contents/Resources"
 XCODE_DEVELOPER="/Applications/Xcode.app/Contents/Developer"
+MODULE_CACHE="$(mktemp -d "${TMPDIR:-/tmp}/midi-to-mml-module-cache.XXXXXX")"
+trap 'rm -rf "$MODULE_CACHE"' EXIT
 
 if [ -x "$XCODE_DEVELOPER/Toolchains/XcodeDefault.xctoolchain/usr/bin/swiftc" ]; then
     SWIFTC="$XCODE_DEVELOPER/Toolchains/XcodeDefault.xctoolchain/usr/bin/swiftc"
@@ -17,7 +19,7 @@ else
     SDK="$(xcrun --sdk macosx --show-sdk-path)"
 fi
 
-mkdir -p "$MACOS_DIR" "$RESOURCES_DIR" "$BUILD_DIR/ModuleCache"
+mkdir -p "$MACOS_DIR" "$RESOURCES_DIR" "$BUILD_DIR"
 
 "$SWIFTC" \
     -O \
@@ -25,7 +27,7 @@ mkdir -p "$MACOS_DIR" "$RESOURCES_DIR" "$BUILD_DIR/ModuleCache"
     -swift-version 5 \
     -target "$(uname -m)-apple-macosx13.0" \
     -sdk "$SDK" \
-    -module-cache-path "$BUILD_DIR/ModuleCache" \
+    -module-cache-path "$MODULE_CACHE" \
     "$PROJECT_DIR/Sources/MIDIToMML/MIDI.swift" \
     "$PROJECT_DIR/Sources/MIDIToMML/main.swift" \
     -o "$MACOS_DIR/$APP_NAME" \

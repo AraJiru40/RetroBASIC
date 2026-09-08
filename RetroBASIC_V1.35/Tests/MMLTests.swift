@@ -143,7 +143,9 @@ struct MMLTests {
     }
 
     private static func rejectInvalidMML() throws {
-        for source in ["O9C", "T10C", "L0C", "Q9C", "@3C", "C&", "R&C", "Z"] {
+        let invalidSources = ["O9C", "T10C", "L0C", "Q9C", "@3C", "C&", "R&C", "Z",
+                              "T" + String(repeating: "9", count: 1_000) + "C"]
+        for source in invalidSources {
             do {
                 _ = try MMLCompiler.compile(channels: [source])
                 fatalError("accepted invalid MML: \(source)")

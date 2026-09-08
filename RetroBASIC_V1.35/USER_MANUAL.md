@@ -1097,7 +1097,7 @@ Ok
 | `GUESS.bas` | 1〜100の数当てゲーム | INPUT、RND、IF |
 | `STARS.bas` | ランダムな星空表示 | LOCATE、COLOR、RND |
 | `CATCH.bas` | 落下物を受け止めるゲーム | INKEY$、LOCATE、矢印キー |
-| `GRAPHICS.bas` | PC-8801風の図形表示 | WIDTH、LINE、CIRCLE、PAINT |
+| `GRAPH.bas` | PC-8801風の図形表示 | WIDTH、LINE、CIRCLE、PAINT |
 | `TILE_PAINT.bas` | X1 Hu-BASIC互換タイルの表示 | HEXCHR$、LINE BF、PAINT |
 | `3D_MAZE_SAMPLE.bas` | ランダム生成される3D迷路 | WIDTH、INKEY$、LINE、BEEP |
 | `MYSTERY_ROOM.bas` | 1部屋から脱出するコマンド式アドベンチャー | LINE INPUT、文字列関数、タイルPAINT |
