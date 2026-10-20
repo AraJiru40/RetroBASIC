@@ -12,6 +12,7 @@
 ```bash
 ./build.sh          # RetroBASIC.app と retrobasic-cli を生成
 open RetroBASIC.app
+./test.sh           # テストを実行
 ```
 
 CLI版(ターミナル内で動く同じインタプリタ):
@@ -155,6 +156,8 @@ PAINT (320,100),T$,6
 | 3D_MAZE_SAMPLE.bas | WIDTH 40／ランダム生成3D迷路ゲーム |
 | MYSTERY_ROOM.bas | コマンド入力とタイルペイントを使う脱出ゲーム |
 | MUSIC.bas | AY-3-8910風3チャンネルMML演奏 |
+| SNOWBOARD.bas | WIDTH 40／INKEY$で操作するスノーボードゲーム |
+| summer_whisper.bas | MIDIToMMLで変換した3チャンネルMML曲 |
 
 ## 対応命令セット
 
@@ -251,5 +254,7 @@ Sources/Terminal.swift       … 80×25ターミナル画面 (AppKit)
 Sources/CharacterPalette.swift … カナ／GRPH入力パレット
 Sources/App.swift            … アプリ本体・メニュー
 Sources/CLIMain.swift        … CLI版エントリポイント
+Tests/                       … MML・スクリーンエディタのテスト(./test.shで実行)
 MIDIToMML/                   … MIDI→3チャンネルMML変換Macアプリ
+TilePatternMaker/            … X1 Hu-BASIC形式タイルパターン作成Macアプリ
 ```
