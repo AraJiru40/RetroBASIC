@@ -23,7 +23,7 @@ echo "== building GUI app =="
     -sdk "$RETROBASIC_SDK" -module-cache-path "$RETROBASIC_MODULE_CACHE" \
     Sources/RetroCharset.swift Sources/Console.swift Sources/PSG.swift Sources/Interpreter.swift \
     Sources/RetroFont.swift Sources/RetroFontKana.swift Sources/RetroFontGraph.swift \
-    Sources/Terminal.swift Sources/CharacterPalette.swift Sources/App.swift \
+    Sources/Terminal.swift Sources/CharacterPalette.swift Sources/SettingsWindow.swift Sources/App.swift \
     -o "$APP/Contents/MacOS/RetroBASIC" \
     -framework Cocoa -framework Carbon -framework AVFoundation
 cp Info.plist "$APP/Contents/Info.plist"

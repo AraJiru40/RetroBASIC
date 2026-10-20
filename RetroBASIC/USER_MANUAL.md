@@ -972,7 +972,13 @@ SAVE "GAME"
 
 この例では`~/Documents/RetroBASIC/GAME.bas`へ保存します。
 
-環境変数`RETROBASIC_DIR`を設定して起動すると、別の保存フォルダを指定できます。
+保存フォルダは、アプリメニューの「RetroBASIC → Settings…」(`Cmd+,`)で変更できます。
+「Choose…」でフォルダを選ぶと、以降の`SAVE`・`LOAD`・`MERGE`・`FILES`・`KILL`はすべて
+そのフォルダを使います。「Use Default」で標準の保存先に戻り、「Show in Finder」で
+現在のフォルダをFinderで開きます。設定は次回起動時にも引き継がれます。
+
+環境変数`RETROBASIC_DIR`を設定して起動した場合は、Settingsの設定よりもこちらが優先されます。
+CLI版で保存先を変えるときもこの環境変数を使います。
 
 ### 10.2 読み込み
 

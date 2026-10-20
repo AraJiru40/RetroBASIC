@@ -53,6 +53,7 @@ CORE_SOURCES=(
     "$PROJECT_DIR/Sources/RetroFontGraph.swift" \
     "$PROJECT_DIR/Sources/Terminal.swift" \
     "$PROJECT_DIR/Sources/CharacterPalette.swift" \
+    "$PROJECT_DIR/Sources/SettingsWindow.swift" \
     "$PROJECT_DIR/Tests/ScreenEditorTests.swift" \
     -o "$BUILD_DIR/ScreenEditorTests" \
     -framework Cocoa -framework Carbon -framework AVFoundation

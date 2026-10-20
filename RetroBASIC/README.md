@@ -54,7 +54,8 @@ RUN
 - **画面コピー**: `Cmd+C`
 - **画面の拡大／縮小**: `Cmd++` / `Cmd+-`(整数倍のみ。等倍で640×400)
 - **CRT風表示**: Viewメニューの`CRT Effect`で、発光・走査線・ごく弱い周辺減光を切り替えます
-- **SAVE/LOAD先**: `~/Documents/RetroBASIC/`(例: `SAVE "GAME"` → GAME.bas)
+- **SAVE/LOAD先**: 標準は `~/Documents/RetroBASIC/`(例: `SAVE "GAME"` → GAME.bas)。
+  `Cmd+,`(RetroBASIC → Settings…)で任意のフォルダに変更できます
 
 `samples/` にサンプルプログラムがあります。中身をコピーしてアプリに貼り付けて `RUN` してください。
 
@@ -252,6 +253,7 @@ Sources/RetroFontKana.swift  … 8×8ドットフォント(半角カタカナ)
 Sources/RetroFontGraph.swift … 8×8ドットフォント(GRPH文字)
 Sources/Terminal.swift       … 80×25ターミナル画面 (AppKit)
 Sources/CharacterPalette.swift … カナ／GRPH入力パレット
+Sources/SettingsWindow.swift … 設定ウインドウ(保存フォルダ)
 Sources/App.swift            … アプリ本体・メニュー
 Sources/CLIMain.swift        … CLI版エントリポイント
 Tests/                       … MML・スクリーンエディタのテスト(./test.shで実行)

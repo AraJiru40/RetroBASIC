@@ -34,6 +34,7 @@ struct ScreenEditorTests {
         useRetroCodesInStringFunctions()
         readTextScreenWithScrn()
         saveAndLoadRetroCharacters()
+        saveFolderFollowsSettings()
         composeCharactersBeforePaletteCommit()
         rejectRemovedScreenCommand()
         renumberProgramAndReferences()
@@ -137,6 +138,47 @@ struct ScreenEditorTests {
               String(loaded.program[0].text).contains(String(spade)),
               RetroCharset.displayString(String(loaded.program[0].text)).contains("ｶﾞ♠") else {
             fatalError("SAVE/LOAD did not preserve retro characters")
+        }
+    }
+
+    static func saveFolderFollowsSettings() {
+        let suite = "RetroBASIC-tests-\(UUID().uuidString)"
+        let preferences = UserDefaults(suiteName: suite)!
+        let chosen = FileManager.default.temporaryDirectory
+            .appendingPathComponent("RetroBASIC-settings-\(UUID().uuidString)")
+        defer {
+            preferences.removePersistentDomain(forName: suite)
+            UserDefaults.standard.removeObject(forKey: Interpreter.saveDirectoryDefaultsKey)
+            try? FileManager.default.removeItem(at: chosen)
+        }
+
+        guard Interpreter.saveDirectory(environment: [:], preferences: preferences)
+                == Interpreter.defaultSaveDirectory else {
+            fatalError("save folder did not fall back to the default")
+        }
+        preferences.set(chosen.path, forKey: Interpreter.saveDirectoryDefaultsKey)
+        guard Interpreter.saveDirectory(environment: [:], preferences: preferences).path
+                == chosen.path else {
+            fatalError("save folder ignored the Settings choice")
+        }
+        guard Interpreter.saveDirectory(environment: ["RETROBASIC_DIR": "/tmp/override"],
+                                        preferences: preferences).path == "/tmp/override" else {
+            fatalError("RETROBASIC_DIR did not override the Settings choice")
+        }
+
+        // SAVE and FILES use the folder chosen in Settings.
+        unsetenv("RETROBASIC_DIR")
+        UserDefaults.standard.set(chosen.path, forKey: Interpreter.saveDirectoryDefaultsKey)
+        let core = TermCore()
+        let interpreter = Interpreter(console: TerminalConsole(core: core))
+        interpreter.processInput("10 PRINT 1")
+        interpreter.handleImmediate("SAVE \"PICKED\"")
+        guard FileManager.default.fileExists(atPath: chosen.appendingPathComponent("PICKED.bas").path) else {
+            fatalError("SAVE did not write to the Settings folder")
+        }
+        interpreter.handleImmediate("FILES")
+        guard core.screenText.contains("PICKED.bas") else {
+            fatalError("FILES did not list the Settings folder")
         }
     }
 

@@ -2070,13 +2070,27 @@ final class Interpreter {
     }
 
     // Files
-    private var saveDir: URL {
-        if let env = ProcessInfo.processInfo.environment["RETROBASIC_DIR"] {
-            return URL(fileURLWithPath: env)
-        }
-        return FileManager.default.homeDirectoryForCurrentUser
+    /// UserDefaults key for the save folder chosen in the app's Settings window.
+    static let saveDirectoryDefaultsKey = "SaveDirectoryPath"
+
+    static var defaultSaveDirectory: URL {
+        FileManager.default.homeDirectoryForCurrentUser
             .appendingPathComponent("Documents/RetroBASIC")
     }
+
+    /// RETROBASIC_DIR wins over the Settings choice, which wins over the default.
+    static func saveDirectory(environment: [String: String] = ProcessInfo.processInfo.environment,
+                              preferences: UserDefaults = .standard) -> URL {
+        if let env = environment["RETROBASIC_DIR"] {
+            return URL(fileURLWithPath: env)
+        }
+        if let path = preferences.string(forKey: saveDirectoryDefaultsKey), !path.isEmpty {
+            return URL(fileURLWithPath: path, isDirectory: true)
+        }
+        return defaultSaveDirectory
+    }
+
+    private var saveDir: URL { Self.saveDirectory() }
 
     private func fileURL(_ rawName: String) throws -> URL {
         var name = rawName.trimmingCharacters(in: .whitespaces)

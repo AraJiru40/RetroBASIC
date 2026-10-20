@@ -13,6 +13,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     private var window: NSWindow!
     private var termView: TerminalView!
     private var characterPalette: CharacterPaletteController!
+    private lazy var settings = SettingsWindowController()
     private let core = TermCore()
 
     func applicationDidFinishLaunching(_ notification: Notification) {
@@ -64,6 +65,10 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         appItem.submenu = appMenu
         appMenu.addItem(withTitle: "About RetroBASIC",
                         action: #selector(showAbout), keyEquivalent: "")
+        appMenu.addItem(.separator())
+        let settingsItem = appMenu.addItem(withTitle: "Settings…",
+                                           action: #selector(showSettings(_:)), keyEquivalent: ",")
+        settingsItem.target = self
         appMenu.addItem(.separator())
         appMenu.addItem(withTitle: "Quit RetroBASIC",
                         action: #selector(NSApplication.terminate(_:)), keyEquivalent: "q")
@@ -121,7 +126,12 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         characterPalette.showPalette()
     }
 
+    @objc private func showSettings(_ sender: Any?) {
+        settings.showSettings()
+    }
+
     @objc private func showAbout() {
+        let saveFolder = (Interpreter.saveDirectory().path as NSString).abbreviatingWithTildeInPath
         let alert = NSAlert()
         alert.messageText = "RetroBASIC 1.35"
         alert.informativeText = """
@@ -136,7 +146,8 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
 
             WIDTH 40 / WIDTH 80 で画面桁数を切り替えます。
 
-            SAVE/LOAD先: ~/Documents/RetroBASIC/
+            SAVE/LOAD先: \(saveFolder)/
+            (RetroBASIC → Settings… で変更できます)
             """
         alert.runModal()
     }
